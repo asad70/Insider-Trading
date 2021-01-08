@@ -11,11 +11,6 @@ Would you like to extract data to excel file (Press enter for no OR enter filena
 Here either enter file name or press enter if you don't want to save the data. By default the program doesn't display any data on shell, but you can add print(all_df) or print(symbol_df) to print the data
 
 
-# Error checking:
-I have implemented some error checking:\
-1.) If user enters incorrect ticker name ex: 'appl, msft, amzn, wrongone' in this case program will skip 'appl' and 'wrongone' it will print out error msg with ticker name and will continue to get insider data and save it to file for rest of the tickers.\
-2.) Let's say you are pulling the data for short period of time and there isn't much info to calculate avg_purch/avg_sale and buy to sell ratio it skip these calculations and append rest of the data to excel file.
-
 # Sample run
 Enter a ticker (ex: 'AAPL, MSFT') or type 'all' to search thru all the tickers in file: aapl, msft, amzn, fb, v\
 Enter the starting date (Ex: 2020-MM-DD): 2020-05-05\
