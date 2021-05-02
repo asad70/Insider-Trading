@@ -1,11 +1,15 @@
 # Insider-Trading
 This program extracts insider trading data from the sec website and stores it in excel file for the specified time frame.
 
-Using:
+# How to run:
+
+    python3 'insider trading.py'
+
+
 Enter a ticker (ex: 'AAPL, MSFT') or type 'all' to search thru all the tickers in file:\
 Here you can enter either single ticker or separate multiple tickers by comma or type 'all' to go thru all the tickers in fName = 'ticker and cik.csv' (default name)
 
-Enter the starting date (Ex: 2020-MM-DD): # enter date in this format no error checking implemented
+Enter the starting date (Ex: 2020-MM-DD): 
 
 Would you like to extract data to excel file (Press enter for no OR enter filename):\
 Here either enter file name or press enter if you don't want to save the data. By default the program doesn't display any data on shell, but you can add print(all_df) or print(symbol_df) to print the data
