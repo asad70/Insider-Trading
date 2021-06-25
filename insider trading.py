@@ -47,7 +47,7 @@ with open(fName, 'r') as file:
 # ticker
 ticker = input("Enter a ticker (ex: 'AAPL, MSFT') or type 'all' to search thru all the tickers in file: ").replace(" ", "")
 ticker = ticker.lower()
-if ticker == 'all': symbols = symbols
+if ticker == 'all': symbols = symbols[1:]
 else:
     tickers = ticker.split(",")
     symbols = tickers
@@ -95,29 +95,32 @@ def insiders(all_data, cik):
     for url in urls:
         c2, headers, data = 0, [], []
         report = transaction(url)    
-        for i in report.children:
-            if i != '\n':
-                collection = i.get_text().split('\n')    
-                c2 += 1                          
-                for x in collection:
-                    if x!= '':          # takng out empty data
-                        if len(headers) != 12:  # 12 headers
-                            headers.append(x)
-                        else: 
-                            x = x.replace('$','')                        
-                            # checking date boundary
-                            if c == 1 and start > x:     # @ c==1, x is date
-                                return  all_data, headers 
-                            elif (x == 'A' or x == 'D'):    # start of new row
-                                if c != 0:
-                                    all_data.append(data)                            
-                                data, c = [], 0        # new row: clear data           
-                                data.append(x)
-                                c += 1
+        try: 
+            for i in report.children:
+                if i != '\n':
+                    collection = i.get_text().split('\n')    
+                    c2 += 1                          
+                    for x in collection:
+                        if x!= '':          # takng out empty data
+                            if len(headers) != 12:  # 12 headers
+                                headers.append(x)
                             else: 
-                                data.append(x)
-                                c += 1     
-               
+                                x = x.replace('$','')                        
+                                # checking date boundary
+                                if c == 1 and start > x:     # @ c==1, x is date
+                                    return  all_data, headers 
+                                elif (x == 'A' or x == 'D'):    # start of new row
+                                    if c != 0:
+                                        all_data.append(data)                            
+                                    data, c = [], 0        # new row: clear data           
+                                    data.append(x)
+                                    c += 1
+                                else: 
+                                    data.append(x)
+                                    c += 1     
+        except Exception as e:
+            print(e)
+            continue
         if c2 == 81: 
             all_data.append(data)                                            
             num += 1
@@ -134,8 +137,7 @@ def data_df(all_df):
     '''        
     done = 0
     for symbol in symbols:
-        all_data = []
-        
+        all_data = []        
         # key error handling
         try: cik = data_dict[symbol]
         except Exception as e:
