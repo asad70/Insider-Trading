@@ -40,3 +40,9 @@ S - Open market or private sale of non-derivative or derivative security
 ticker and cik.csv source: https://www.sec.gov/include/ticker.txt \
 Transaction types: https://www.sec.gov/opa/column-descriptions.html
 
+
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details.
+
