@@ -76,57 +76,49 @@ def transaction(url):
     return trans_report
 
 
-def insiders(all_data, cik):
+def insiders(cik):
     '''gets the insider info of given cik number 
-    Parameter:    all_data: list
-                       empty list to add data
-                  cik: string
+    Parameter:    cik: string
                        cik number
-    Return:       all_data: list
-                       list of all the data
-                  headers: list
-                       list of the headers "Acquistion or Disposition...."
-    '''    
+    Return:       all_data: pandas dataframe
+                       dataframe of all the data
+    
+    '''
+    all_data = None
+
     num = 0
     url = f'https://www.sec.gov/cgi-bin/own-disp?action=getissuer&CIK={cik}&type=&dateb=&owner=include&start={num}'
     
-    urls, c = [], 0
+    urls = []
     urls.append(url)
     for url in urls:
-        c2, headers, data = 0, [], []
-        report = transaction(url)    
-        try: 
-            for i in report.children:
-                if i != '\n':
-                    collection = i.get_text().split('\n')    
-                    c2 += 1                          
-                    for x in collection:
-                        if x!= '':          # takng out empty data
-                            if len(headers) != 12:  # 12 headers
-                                headers.append(x)
-                            else: 
-                                x = x.replace('$','')                        
-                                # checking date boundary
-                                if c == 1 and start > x:     # @ c==1, x is date
-                                    return  all_data, headers 
-                                elif (x == 'A' or x == 'D'):    # start of new row
-                                    if c != 0:
-                                        all_data.append(data)                            
-                                    data, c = [], 0        # new row: clear data           
-                                    data.append(x)
-                                    c += 1
-                                else: 
-                                    data.append(x)
-                                    c += 1     
+        
+        try:
+            report = pd.read_html(str(transaction(url)))[0]
+
+            if report is None or report.shape[1] != 12:
+                raise Exception("Unexpected response from data server")
+
+            for _, row in report.iterrows():
+                if all_data is None:
+                    all_data = pd.DataFrame(columns = report.columns)
+       
+                if row['Transaction Date'] < start:
+                    return all_data
+
+                all_data = pd.concat([all_data,pd.DataFrame(row).T])
+        
+            #If we received a full report, add another url request
+            if report.shape[0] >= 80: 
+                num += 1
+                url = f'https://www.sec.gov/cgi-bin/own-disp?action=getissuer&CIK={cik}&type=&dateb=&owner=include&start={num*80}'
+                urls.append(url)
+                
         except Exception as e:
             print(e)
             continue
-        if c2 == 81: 
-            all_data.append(data)                                            
-            num += 1
-            url = f'https://www.sec.gov/cgi-bin/own-disp?action=getissuer&CIK={cik}&type=&dateb=&owner=include&start={num*80}'
-            urls.append(url)
-    return  all_data, headers 
+    
+    return  all_data 
           
 
 def data_df(all_df):
@@ -137,19 +129,21 @@ def data_df(all_df):
     '''        
     done = 0
     for symbol in symbols:
-        all_data = []        
         # key error handling
         try: cik = data_dict[symbol]
         except Exception as e:
             print(f"The symbol {e} is not valid, rest of the data will be saved to excel file (if available)")        
             if symbol == symbols[-1]: break
             else: continue
-        all_data, headers = insiders(all_data, cik)
-    
-        # adding to data frame
-        df = pd.DataFrame.from_records(all_data, columns=headers)
+
+        df = insiders(cik)
         done += 1
-        print(f"Finished extracting {symbol.upper()} insider data from {start} till {end_date}.")
+        
+        if df is None:
+            print(f"Retreiving insider trades for the symbol \"{symbol}\" failed. Skipping...")
+            continue
+        
+        print(f"Finished extracting {symbol.upper()} insider data from {start} till {end_date}. A total of {df.shape[0]} insider trades logged.")
         print(f"Finished: {done}/{len(symbols)} symbols.")
         
         df['Purchchase'] = pd.to_numeric(df['Acquistion or Disposition'].apply(lambda x: 1 if x == 'A' else 0) * df['Number of Securities Transacted'])
@@ -192,6 +186,7 @@ def data_df(all_df):
             
         symbol_df.set_index('Symbol', inplace=True)    
         all_df.append(symbol_df)
+
     
 def excel(all_df):
     '''adds the data to excel sheet, data is saved in same floder as this file
